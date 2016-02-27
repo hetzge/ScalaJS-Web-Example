@@ -1,4 +1,4 @@
-package example
+package client
 import org.scalajs.dom
 import dom.html
 import scalajs.js.annotation.JSExport
@@ -16,6 +16,9 @@ import org.scalajs.dom.raw.Node
 import org.scalajs.dom.raw.Element
 import scalatags.generic.Modifier
 import org.scalajs.dom.raw.HTMLElement
+import server.AutowireServer
+import server.AutowireApi
+import scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object Helper {
   //
@@ -63,14 +66,21 @@ trait ComponentStyle extends StyleSheet.Inline {
 
 case class TitledPane(headline: Frag, text: String) extends Component {
 
-   val css = new ComponentStyle {
+  import autowire._ // !!!
+  MyClient[AutowireApi].doThing(1, "").call().map{ results: Seq[String] => 
+     for(result <- results){
+       println("Result", result)
+     }
+  }
+
+  val css = new ComponentStyle {
     import dsl._
 
     val button = style(
       fontSize(200 %%),
       margin(12 px))
   }
-  
+
   val textDiv = {
     import scalatags.JsDom.all._
     div(headline, div(text, css.button)).render
@@ -92,14 +102,27 @@ case class TitledPane(headline: Frag, text: String) extends Component {
     jQuery(xxx).replaceWith(TitledPane.this.copy(text = if (text == "abc") "123" else "abc").render)
   }
 
-  // TODO use inline style ?
-  // TODO Macro
-  // TODO Collect style strings
-  // TODO ScalaCss Global Registry / Style Module
-
- 
-
 }
+
+object MyClient extends autowire.Client[upickle.Js.Value, upickle.default.Reader, upickle.default.Writer] {
+  import upickle.default._
+  import upickle.Js
+  import autowire._
+
+  def read[Result: Reader](p: Js.Value) = readJs[Result](p)
+  def write[Result: Writer](r: Result) = writeJs(r)
+
+  override def doCall(req: MyClient.Request) = {
+    dom.ext.Ajax.post(
+      url = "http://127.0.0.1:8080/api/" + req.path.mkString("/") + "/",
+      data = upickle.json.write(Js.Obj(req.args.toSeq: _*)))
+      .map(_.responseText)
+      .map(upickle.json.read)
+  }
+}
+
+
+
 
 
 
