@@ -19,7 +19,7 @@ object JooqGenerator extends App{
         .withInputSchema("test"))
       .withTarget(new Target()
         .withPackageName("server.generated")
-        .withDirectory("src/main/scala")))
+        .withDirectory("jvm/src/main/scala")))
 
   GenerationTool.generate(configuration)
 }

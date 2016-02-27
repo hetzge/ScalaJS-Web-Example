@@ -16,9 +16,18 @@ import org.scalajs.dom.raw.Node
 import org.scalajs.dom.raw.Element
 import scalatags.generic.Modifier
 import org.scalajs.dom.raw.HTMLElement
-import server.AutowireServer
-import server.AutowireApi
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
+import shared.AutowireApi
+import shared.Name
+import java.nio.ByteBuffer
+import boopickle.Pickler
+import scala.concurrent.impl.Future
+import scala.scalajs.js.typedarray.TypedArrayBuffer
+import scala.scalajs.js.typedarray.ArrayBuffer
+import scala.reflect.internal.pickling.UnPickler
+import boopickle.Default._
+import scala.concurrent.Future
+import shared.One
 
 object Helper {
   //
@@ -66,13 +75,6 @@ trait ComponentStyle extends StyleSheet.Inline {
 
 case class TitledPane(headline: Frag, text: String) extends Component {
 
-  import autowire._ // !!!
-  MyClient[AutowireApi].doThing(1, "").call().map{ results: Seq[String] => 
-     for(result <- results){
-       println("Result", result)
-     }
-  }
-
   val css = new ComponentStyle {
     import dsl._
 
@@ -97,30 +99,47 @@ case class TitledPane(headline: Frag, text: String) extends Component {
   }
 
   def reset(): Unit = {
-    println("blaaa")
+
+    import autowire._ // !!!
+    MyClient[AutowireApi].doMoreComplex(Name("Hallo", "Welt")).call().map(println(_))
+
+    println("blaaaaaaaggggg")
     import scalatags.JsDom.all._
     jQuery(xxx).replaceWith(TitledPane.this.copy(text = if (text == "abc") "123" else "abc").render)
   }
 
 }
 
-object MyClient extends autowire.Client[upickle.Js.Value, upickle.default.Reader, upickle.default.Writer] {
-  import upickle.default._
-  import upickle.Js
-  import autowire._
+//object MyClient extends autowire.Client[upickle.Js.Value, upickle.default.Reader, upickle.default.Writer] {
+//  import upickle.default._
+//  import upickle.Js
+//  import autowire._
+//
+//  def read[Result: Reader](p: Js.Value) = readJs[Result](p)
+//  def write[Result: Writer](r: Result) = writeJs(r)
+//
+//  override def doCall(req: MyClient.Request) = {
+//    dom.ext.Ajax.post(
+//      url = "http://127.0.0.1:8080/api/" + req.path.mkString("/") + "/",
+//      data = upickle.json.write(Js.Obj(req.args.toSeq: _*)))
+//      .map(_.responseText)
+//      .map(upickle.json.read)
+//  }
+//}
 
-  def read[Result: Reader](p: Js.Value) = readJs[Result](p)
-  def write[Result: Writer](r: Result) = writeJs(r)
-
-  override def doCall(req: MyClient.Request) = {
+object MyClient extends autowire.Client[ByteBuffer, Pickler, Pickler] {
+  override def doCall(req: Request): Future[ByteBuffer] = {
     dom.ext.Ajax.post(
       url = "http://127.0.0.1:8080/api/" + req.path.mkString("/") + "/",
-      data = upickle.json.write(Js.Obj(req.args.toSeq: _*)))
-      .map(_.responseText)
-      .map(upickle.json.read)
+      data = Pickle.intoBytes(req.args),
+      responseType = "arraybuffer",
+      headers = Map("Content-Type" -> "application/octet-stream")
+    ).map(r => TypedArrayBuffer.wrap(r.response.asInstanceOf[ArrayBuffer]))
   }
-}
 
+  override def read[Result: Pickler](p: ByteBuffer) = Unpickle[Result].fromBytes(p)
+  override def write[Result: Pickler](r: Result) = Pickle.intoBytes(r)
+}
 
 
 
