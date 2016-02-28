@@ -15,7 +15,9 @@ object Test extends App {
 
   val USER = User.USER;
 
-  val results = dslContext.select(USER.ID) from USER where (USER.ID > 1) fetch
+  val field = USER.field(0)
+
+  val results = dslContext.select(field) from USER where (USER.ID > 1) fetch
 
   for (result <- results) {
     println(result.value1())

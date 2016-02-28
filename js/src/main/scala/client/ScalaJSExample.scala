@@ -17,8 +17,7 @@ import org.scalajs.dom.raw.Element
 import scalatags.generic.Modifier
 import org.scalajs.dom.raw.HTMLElement
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
-import shared.AutowireApi
-import shared.Name
+import shared._
 import java.nio.ByteBuffer
 import boopickle.Pickler
 import scala.concurrent.impl.Future
@@ -27,7 +26,6 @@ import scala.scalajs.js.typedarray.ArrayBuffer
 import scala.reflect.internal.pickling.UnPickler
 import boopickle.Default._
 import scala.concurrent.Future
-import shared.One
 
 object Helper {
   //
@@ -102,6 +100,9 @@ case class TitledPane(headline: Frag, text: String) extends Component {
 
     import autowire._ // !!!
     MyClient[AutowireApi].doMoreComplex(Name("Hallo", "Welt")).call().map(println(_))
+
+    new ApiEntityRequest(UserEntityType, Seq(UserField.USERNAME), Seq(ApiFieldFilter(UserField.ID, IntApiValue(include = Seq(1, 2, 3)))))
+
 
     println("blaaaaaaaggggg")
     import scalatags.JsDom.all._

@@ -1,12 +1,10 @@
 package server
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import shared.AutowireApi
-import shared.Name
+import shared.{ApiResult, AutowireApi}
 import autowire._
 import boopickle.Default._
 import java.nio.ByteBuffer
-import shared.Some
 
 //object AutowireServer extends autowire.Server[Js.Value, Reader, Writer] {
 //  def read[Result: Reader](p: Js.Value) = upickle.default.readJs[Result](p)
@@ -21,8 +19,6 @@ object AutowireServer extends autowire.Server[ByteBuffer, Pickler, Pickler] {
 }
 
 object AutowireApiImpl extends AutowireApi {
-  def doThing(i: Int, s: String): Seq[String] = Seq(i.toString(), s)
-  def doMoreComplex(name: Name): String = name.firstName + " " + name.lastName
-  def generic(someValue: Some): String = "Hello"
+
 }
 
