@@ -30,7 +30,7 @@ class DbService {
     val resultCount = apiEntities.length
     val totalCount = dslContext.fetchCount(joinedQuery)
 
-    ApiResult(apiEntities, resultCount, totalCount)
+    ApiResult(apiEntities.toSeq, resultCount, totalCount)
   }
 
   def getVideos(apiRequest: ApiRequest): ApiResult = {
@@ -67,10 +67,10 @@ class DbService {
   private def packResult(apiRequest: ApiRequest, results: Result[Record]) = {
     val fields = apiRequest.fields.map(mapVideoField(_)).map(_._1)
 
-    val apiEntities = ArrayBuffer[ApiEntity]()
+    val apiEntities = ArrayBuffer[Map[ApiField, String]]()
     for (result <- results) {
-      val values = for (i <- 0 until fields.length) yield (apiRequest.fields(i) -> result.getValue(fields(i)))
-      apiEntities += ApiEntity(values.toMap)
+      val values = for (i <- 0 until fields.length) yield (apiRequest.fields(i) -> result.getValue(fields(i)).toString)
+      apiEntities += values.toMap
     }
 
     apiEntities
@@ -79,21 +79,20 @@ class DbService {
   case class JoinDescription[T](table: TableLike[_], onField: Field[T], equalField: Field[T])
 
   // TODO extract objects
+  // TODO implicit mapper
 
-  def mapUserField(field: ApiField[_]): (Field[_], JoinDescription[Integer]) = {
+  def mapUserField(field: ApiField): (Field[_], JoinDescription[Integer]) = {
     field match {
-      case ApiField.ID => (Tables.USER.ID, null)
+      case EntityField.ID => (Tables.USER.ID, null)
       case UserField.USERNAME => (Tables.USER.USERNAME, null)
       case UserField.EMAIL => (Tables.USER.EMAIL, null)
       case _ => throw new IllegalStateException("Invalid api field " + field.name)
     }
   }
 
-  def mapVideoField(field: ApiField[_]): (Field[_], JoinDescription[Integer]) = {
-
-
+  def mapVideoField(field: ApiField): (Field[_], JoinDescription[Integer]) = {
     field match {
-      case ApiField.ID => (Tables.VIDEO.ID, null)
+      case EntityField.ID => (Tables.VIDEO.ID, null)
       case VideoField.USERNAME => (Tables.USER.USERNAME, JoinDescription(Tables.USER, Tables.VIDEO.USER, Tables.USER.ID))
       case _ => throw new IllegalStateException("Invalid api field " + field.name)
     }
