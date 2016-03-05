@@ -5,32 +5,23 @@ import dom.html
 import scalajs.js.annotation.JSExport
 import scalacss.DevDefaults._
 import scalacss.ScalatagsCss._
-import Helper._
 import scalacss.mutable.Register
 import scalatags.Text.TypedTag
 import org.scalajs.dom.raw.HTMLStyleElement
 import scalacss.{ NonEmptyVector, UnicodeRange }
 import scalatags.jsdom.Frag
-import rx._
 import org.scalajs.jquery._
 import org.scalajs.dom.raw.Node
 import org.scalajs.dom.raw.Element
 import scalatags.generic.Modifier
 import org.scalajs.dom.raw.HTMLElement
-import scalajs.concurrent.JSExecutionContext.Implicits.queue
 import shared._
 import java.nio.ByteBuffer
 import scala.concurrent.impl.Future
 import scala.scalajs.js.typedarray.TypedArrayBuffer
 import scala.scalajs.js.typedarray.ArrayBuffer
 import scala.concurrent.Future
-
-object Helper {
-  //
-  //  implicit def convertComponent[T <: Component](component: T) = component.html
-  //
-  //  def render[T <: Component](component: T) = component.html
-}
+import scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object App {
 
@@ -51,58 +42,14 @@ class HelloWorld1 {
   @JSExport
   def main(headContent: html.Div, main: html.Div) = {
     import scalatags.JsDom.all._
-    val titledPane = TitledPane(span("Der Titel"), "Text")
-    val titledPane2 = TitledPane(span("Der Titel 2"), "Text 2")
-    main.appendChild(div(titledPane, titledPane2).render)
+    val x = Model[Int](10)
+
+    val titledPanes = (0 until 10).map{ i: Int => Component.TitledPane(span("Der Titel " + i), "Text", x)}
+
+    main.appendChild(div(titledPanes:_*).render)
 
     val stylesheet = App.styles.map(_.render[String]).mkString("\n");
     headContent.appendChild(scalatags.JsDom.tags2.style(stylesheet).render)
-  }
-
-}
-
-trait Component extends Frag {
-  def render = html
-  val html: Node
-  val css: ComponentStyle
-}
-
-trait ComponentStyle extends StyleSheet.Inline {
-  App.styles += this
-}
-
-object TitledPaneStyle extends ComponentStyle{
-  import dsl._
-
-  val button = style(
-    fontSize(200 %%),
-    margin(12 px))
-}
-case class TitledPane(headline: Frag, text: String) extends Component {
-  override val css = TitledPaneStyle
-  override val html = Component.main
-
-  object Component{
-    import scalatags.JsDom.all._
-
-    val main = div(Component.textDiv, clickDiv).render
-    val textDiv = div(headline, div(text, css.button)).render
-    val clickDiv = div("Click me", onclick := reset _).render
-  }
-
-  def reset(): Unit = {
-
-    import autowire._ // !!!
-    MyClient[AutowireApi].getAllVideos(ApiRequest(Seq(VideoField.USERNAME))).call().map{ (result: ApiResult) =>
-      println("Hello world")
-        for(e <- result.entities){
-//          println(e.get(VideoField.USERNAME))
-        }
-      }
-
-    println("blaaaaaaaggggg")
-
-    jQuery(html).replaceWith(TitledPane.this.copy(text = if (text == "abc") "123" else "abc").render)
   }
 
 }

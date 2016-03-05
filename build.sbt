@@ -59,7 +59,6 @@ lazy val example = crossProject.in(file(".")).
       "com.lihaoyi" %%% "scalatags" % "0.5.4",
       "com.github.japgolly.scalacss" %%% "core" % "0.4.0",
       "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.4.0",
-      "com.lihaoyi" %%% "scalarx" % "0.3.1",
       "org.scala-js" %%% "scalajs-dom" % "0.9.0",
       "be.doeraene" %%% "scalajs-jquery" % "0.9.0"
     )
