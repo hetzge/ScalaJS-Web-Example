@@ -12,8 +12,10 @@ import org.jooq.UniqueKey;
 import org.jooq.impl.AbstractKeys;
 
 import server.generated.tables.User;
+import server.generated.tables.UserUser;
 import server.generated.tables.Video;
 import server.generated.tables.records.UserRecord;
+import server.generated.tables.records.UserUserRecord;
 import server.generated.tables.records.VideoRecord;
 
 
@@ -44,12 +46,15 @@ public class Keys {
 
 	public static final UniqueKey<UserRecord> KEY_USER_PRIMARY = UniqueKeys0.KEY_USER_PRIMARY;
 	public static final UniqueKey<UserRecord> KEY_USER_USERNAME = UniqueKeys0.KEY_USER_USERNAME;
+	public static final UniqueKey<UserUserRecord> KEY_USER_USER_PRIMARY = UniqueKeys0.KEY_USER_USER_PRIMARY;
 	public static final UniqueKey<VideoRecord> KEY_VIDEO_PRIMARY = UniqueKeys0.KEY_VIDEO_PRIMARY;
 
 	// -------------------------------------------------------------------------
 	// FOREIGN KEY definitions
 	// -------------------------------------------------------------------------
 
+	public static final ForeignKey<UserUserRecord, UserRecord> USER_SUBJECT = ForeignKeys0.USER_SUBJECT;
+	public static final ForeignKey<UserUserRecord, UserRecord> USER_OBJECT = ForeignKeys0.USER_OBJECT;
 	public static final ForeignKey<VideoRecord, UserRecord> USER = ForeignKeys0.USER;
 
 	// -------------------------------------------------------------------------
@@ -64,10 +69,13 @@ public class Keys {
 	private static class UniqueKeys0 extends AbstractKeys {
 		public static final UniqueKey<UserRecord> KEY_USER_PRIMARY = createUniqueKey(User.USER, User.USER.ID);
 		public static final UniqueKey<UserRecord> KEY_USER_USERNAME = createUniqueKey(User.USER, User.USER.USERNAME);
+		public static final UniqueKey<UserUserRecord> KEY_USER_USER_PRIMARY = createUniqueKey(UserUser.USER_USER, UserUser.USER_USER.USER_SUBJECT, UserUser.USER_USER.USER_OBJECT);
 		public static final UniqueKey<VideoRecord> KEY_VIDEO_PRIMARY = createUniqueKey(Video.VIDEO, Video.VIDEO.ID);
 	}
 
 	private static class ForeignKeys0 extends AbstractKeys {
+		public static final ForeignKey<UserUserRecord, UserRecord> USER_SUBJECT = createForeignKey(server.generated.Keys.KEY_USER_PRIMARY, UserUser.USER_USER, UserUser.USER_USER.USER_SUBJECT);
+		public static final ForeignKey<UserUserRecord, UserRecord> USER_OBJECT = createForeignKey(server.generated.Keys.KEY_USER_PRIMARY, UserUser.USER_USER, UserUser.USER_USER.USER_OBJECT);
 		public static final ForeignKey<VideoRecord, UserRecord> USER = createForeignKey(server.generated.Keys.KEY_USER_PRIMARY, Video.VIDEO, Video.VIDEO.ID);
 	}
 }

@@ -34,7 +34,7 @@ import server.generated.tables.records.UserRecord;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class User extends TableImpl<UserRecord> {
 
-	private static final long serialVersionUID = 1976244249;
+	private static final long serialVersionUID = 823475;
 
 	/**
 	 * The reference instance of <code>test.user</code>
@@ -68,6 +68,11 @@ public class User extends TableImpl<UserRecord> {
 	 * The column <code>test.user.password</code>.
 	 */
 	public final TableField<UserRecord, String> PASSWORD = createField("password", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "");
+
+	/**
+	 * The column <code>test.user.profileimage</code>.
+	 */
+	public final TableField<UserRecord, String> PROFILEIMAGE = createField("profileimage", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "");
 
 	/**
 	 * Create a <code>test.user</code> table reference

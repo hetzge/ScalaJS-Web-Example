@@ -2,6 +2,7 @@ package client
 
 import org.scalajs.dom
 import dom.html
+import scalacss.ext.CssReset
 import scalajs.js.annotation.JSExport
 import scalacss.DevDefaults._
 import scalacss.ScalatagsCss._
@@ -24,16 +25,7 @@ import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 object App {
-
   val styles = new scala.collection.mutable.ArrayBuffer[StyleSheet.Inline]()
-
-  object MyStyles extends StyleSheet.Inline {
-    import dsl._
-
-    val button = style(
-      fontSize(200 %%),
-      margin(12 px))
-  }
 }
 
 @JSExport
@@ -44,11 +36,15 @@ class HelloWorld1 {
     import scalatags.JsDom.all._
     val x = Model[Int](10)
 
-    val titledPanes = (0 until 10).map{ i: Int => Component.TitledPane(span("Der Titel " + i), "Text", x)}
+    main.appendChild(div(Component.DemoElement()).render)
 
-    main.appendChild(div(titledPanes:_*).render)
+    println("stylecount", App.styles.size)
+
+
 
     val stylesheet = App.styles.map(_.render[String]).mkString("\n");
+
+
     headContent.appendChild(scalatags.JsDom.tags2.style(stylesheet).render)
   }
 

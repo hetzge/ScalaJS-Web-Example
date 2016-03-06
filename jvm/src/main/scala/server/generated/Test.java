@@ -14,6 +14,7 @@ import org.jooq.Table;
 import org.jooq.impl.SchemaImpl;
 
 import server.generated.tables.User;
+import server.generated.tables.UserUser;
 import server.generated.tables.Video;
 
 
@@ -30,7 +31,7 @@ import server.generated.tables.Video;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Test extends SchemaImpl {
 
-	private static final long serialVersionUID = -1836806809;
+	private static final long serialVersionUID = -1197607600;
 
 	/**
 	 * The reference instance of <code>test</code>
@@ -54,6 +55,7 @@ public class Test extends SchemaImpl {
 	private final List<Table<?>> getTables0() {
 		return Arrays.<Table<?>>asList(
 			User.USER,
+			UserUser.USER_USER,
 			Video.VIDEO);
 	}
 }

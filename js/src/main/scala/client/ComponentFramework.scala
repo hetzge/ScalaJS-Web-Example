@@ -18,10 +18,10 @@ trait HtmlElement extends Frag {
   /**
     * This function produce the html to render.
     */
-  def html: Node
+  def html: Frag
 
   final def render = {
-    renderedHtml = html
+    renderedHtml = html.render
     afterRender
     renderedHtml
   }
@@ -61,7 +61,7 @@ case class ReactiveText(model: Model[_]) extends ReactiveElement {
 
   import scalatags.JsDom.all._
 
-  override def html = span(model.get().toString()).render
+  override def html = span(model.get().toString())
 
   reactOn(model)
 }
@@ -71,7 +71,7 @@ abstract class ReactiveListElement[T](model: Model[Seq[T]]) extends ReactiveElem
 
   import scalatags.JsDom.all._
 
-  override def html = div(model.get().map(listHtml(_)): _*).render
+  override def html = div(model.get().map(listHtml(_)): _*)
 
   reactOn(model)
 }
@@ -80,7 +80,7 @@ case class ReactiveInput(model: Model[String]) extends ReactiveElement {
 
   import scalatags.JsDom.all._
 
-  override def html: Node = input(value := model.get()).render
+  override def html = input(value := model.get())
 
   /**
     * Temporal hack to prevent self calling change events

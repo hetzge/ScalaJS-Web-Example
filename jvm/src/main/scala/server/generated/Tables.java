@@ -7,6 +7,7 @@ package server.generated;
 import javax.annotation.Generated;
 
 import server.generated.tables.User;
+import server.generated.tables.UserUser;
 import server.generated.tables.Video;
 
 
@@ -27,6 +28,11 @@ public class Tables {
 	 * The table test.user
 	 */
 	public static final User USER = server.generated.tables.User.USER;
+
+	/**
+	 * The table test.user_user
+	 */
+	public static final UserUser USER_USER = server.generated.tables.UserUser.USER_USER;
 
 	/**
 	 * The table test.video

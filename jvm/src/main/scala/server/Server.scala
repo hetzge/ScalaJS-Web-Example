@@ -24,80 +24,89 @@ class DbService {
   val dslContext = DSL.using(connection, SQLDialect.MARIADB)
 
   def getUsers(apiRequest: ApiRequest): ApiResult = {
-    val joinedQuery = get(apiRequest, Tables.USER)
-    val results = joinedQuery.fetch()
+   get(new UserApiRequest(apiRequest))
+  }
+
+  def getVideos(apiRequest: ApiRequest): ApiResult = {
+    get(new VideoApiRequest(apiRequest))
+  }
+
+  def get(apiRequestQuery: ApiRequestQuery) = {
+    val apiRequest = apiRequestQuery.apiRequest
+    val query = apiRequestQuery.createQuery()
+    val results = query.fetch()
     val apiEntities = packResult(apiRequest, results)
     val resultCount = apiEntities.length
-    val totalCount = dslContext.fetchCount(joinedQuery)
+    val totalCount = dslContext.fetchCount(query)
 
     ApiResult(apiEntities.toSeq, resultCount, totalCount)
   }
 
-  def getVideos(apiRequest: ApiRequest): ApiResult = {
-    val joinedQuery = get(apiRequest, Tables.VIDEO)
-    val results = joinedQuery.fetch()
-    val apiEntities = packResult(apiRequest, results)
-    val resultCount = apiEntities.length
-    val totalCount = dslContext.fetchCount(joinedQuery)
-
-    ApiResult(apiEntities, resultCount, totalCount)
-  }
-
-  private def get(apiRequest: ApiRequest, table: TableLike[_]) = {
-    val fields = apiRequest.fields.map(mapVideoField(_)).map(_._1)
-    val joins = apiRequest.fields.map(mapVideoField(_)).map(_._2).filter(_ != null)
-
-    val baseQuery = dslContext.select(fields: _*).from(table)
-
-    val joinedQuery = joins.foldLeft(baseQuery) { (query: SelectJoinStep[Record], joinDescription: JoinDescription[Integer]) =>
-      val table = joinDescription.table
-      val onField = joinDescription.onField
-      val equalField  = joinDescription.equalField
-      val condition: Condition = onField.equal(equalField)
-
-      query.join(table).on(condition)
-    }
-
-    println(joins.size)
-    println(joinedQuery.toString)
-
-    joinedQuery
-  }
-
   private def packResult(apiRequest: ApiRequest, results: Result[Record]) = {
-    val fields = apiRequest.fields.map(mapVideoField(_)).map(_._1)
-
     val apiEntities = ArrayBuffer[Map[ApiField, String]]()
     for (result <- results) {
-      val values = for (i <- 0 until fields.length) yield (apiRequest.fields(i) -> result.getValue(fields(i)).toString)
+      if(result.size() != apiRequest.fields.size){
+        throw new IllegalStateException("The count of fetched fields have to be the same like the requested");
+      }
+      val values = for (i <- 0 until apiRequest.fields.length) yield (apiRequest.fields(i) -> result.getValue(i).toString)
       apiEntities += values.toMap
     }
 
     apiEntities
   }
 
-  case class JoinDescription[T](table: TableLike[_], onField: Field[T], equalField: Field[T])
+}
 
-  // TODO extract objects
-  // TODO implicit mapper
+abstract class ApiRequestQuery(val table: Table[_],val apiRequest: ApiRequest) {
 
-  def mapUserField(field: ApiField): (Field[_], JoinDescription[Integer]) = {
-    field match {
-      case EntityField.ID => (Tables.USER.ID, null)
-      case UserField.USERNAME => (Tables.USER.USERNAME, null)
-      case UserField.EMAIL => (Tables.USER.EMAIL, null)
-      case _ => throw new IllegalStateException("Invalid api field " + field.name)
+  import org.jooq.impl.DSL._
+
+  def fields = apiRequest.fields.collect(field)
+
+  def joins(query: SelectJoinStep[Record]) = apiRequest.fields.foldLeft(query)(join)
+
+  def field: PartialFunction[ApiField, Field[_]]
+
+  def join(query: SelectJoinStep[Record], apiField: ApiField): SelectJoinStep[Record]
+
+  def createQuery() = joins(select(fields: _*).from(table))
+
+}
+
+class VideoApiRequest(val apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USER, apiRequest) {
+
+  override def field = {
+    case VideoField.TITLE => Tables.VIDEO.TITLE
+    case VideoField.USERNAME => Tables.USER.USERNAME
+  }
+
+  override def join(query: SelectJoinStep[Record], apiField: ApiField) = {
+    apiField match {
+      case UserField.USERNAME => query.join(Tables.USER).on(Tables.VIDEO.USER.equal(Tables.USER.ID))
+      case _ => query
     }
   }
 
-  def mapVideoField(field: ApiField): (Field[_], JoinDescription[Integer]) = {
-    field match {
-      case EntityField.ID => (Tables.VIDEO.ID, null)
-      case VideoField.USERNAME => (Tables.USER.USERNAME, JoinDescription(Tables.USER, Tables.VIDEO.USER, Tables.USER.ID))
-      case _ => throw new IllegalStateException("Invalid api field " + field.name)
-    }
+}
+
+class UserApiRequest(val apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USER, apiRequest) {
+
+  import org.jooq.impl.DSL._
+
+  val abosAlias = Tables.USER_USER.as("abos")
+
+  override def field = {
+    case UserField.USERNAME => Tables.USER.USERNAME
+    case UserField.EMAIL => Tables.USER.EMAIL
+    case UserField.ABO_COUNT => count(Tables.USER_USER.USER_OBJECT)
   }
 
+  override def join(query: SelectJoinStep[_], apiField: ApiField) = {
+    apiField match {
+      case UserField.ABO_COUNT => query.join(abosAlias).on(Tables.USER.ID.equal(Tables.USER_USER.USER_OBJECT).and(Tables.USER_USER.VERB.equal("")))
+      case _ => query
+    }
+  }
 }
 
 object Blub extends App {
@@ -105,7 +114,7 @@ object Blub extends App {
 
   val results = Server.dbService.getVideos(request)
 
-  for(entity <- results.entities){
+  for (entity <- results.entities) {
     println(entity.get(VideoField.USERNAME))
   }
 
