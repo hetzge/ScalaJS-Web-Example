@@ -95,7 +95,7 @@ object Component {
       import scalatags.JsDom.all._
 
       import autowire._ // !!!
-      MyClient[AutowireApi].getAllVideos(ApiRequest(Seq(VideoField.USERNAME))).call().map{ (result: ApiResult) =>
+      MyClient[AutowireApi].getAllVideos(ApiRequest(Seq(VideoField.OWNER_USERNAME))).call().map{ (result: ApiResult) =>
         println("Hello world")
         for(e <- result.entities){
           //          println(e.get(VideoField.USERNAME))

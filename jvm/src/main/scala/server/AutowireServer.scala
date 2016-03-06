@@ -1,7 +1,7 @@
 package server
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import shared.{ApiRequest, ApiResult, AutowireApi}
+import shared._
 import autowire._
 
 //object AutowireServer extends autowire.Server[Js.Value, Reader, Writer] {
@@ -22,4 +22,3 @@ object AutowireServer extends autowire.Server[String, Reader, Writer] {
 object AutowireApiImpl extends AutowireApi {
   override def getAllVideos(apiRequest: ApiRequest): ApiResult = Server.dbService.getVideos(apiRequest)
 }
-

@@ -34,12 +34,14 @@ class DbService {
   def get(apiRequestQuery: ApiRequestQuery) = {
     val apiRequest = apiRequestQuery.apiRequest
     val query = apiRequestQuery.createQuery()
+    println(query.toString())
+
     val results = query.fetch()
-    val apiEntities = packResult(apiRequest, results)
+    val apiEntities =  packResult(apiRequest, results)
     val resultCount = apiEntities.length
     val totalCount = dslContext.fetchCount(query)
 
-    ApiResult(apiEntities.toSeq, resultCount, totalCount)
+    ApiResult(apiEntities, resultCount, totalCount)
   }
 
   private def packResult(apiRequest: ApiRequest, results: Result[Record]) = {
@@ -52,14 +54,12 @@ class DbService {
       apiEntities += values.toMap
     }
 
-    apiEntities
+    apiEntities.toSeq
   }
 
 }
 
 abstract class ApiRequestQuery(val table: Table[_],val apiRequest: ApiRequest) {
-
-  import org.jooq.impl.DSL._
 
   def fields = apiRequest.fields.collect(field)
 
@@ -69,7 +69,9 @@ abstract class ApiRequestQuery(val table: Table[_],val apiRequest: ApiRequest) {
 
   def join(query: SelectJoinStep[Record], apiField: ApiField): SelectJoinStep[Record]
 
-  def createQuery() = joins(Server.dbService.dslContext.select(fields: _*).from(table))
+  def afterJoin(query: SelectJoinStep[Record]): Select[Record]
+
+  def createQuery() = afterJoin(joins(Server.dbService.dslContext.select(fields: _*).from(table)))
 
 }
 
@@ -77,15 +79,17 @@ class VideoApiRequest(apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USE
 
   override def field = {
     case VideoField.TITLE => Tables.VIDEO.TITLE
-    case VideoField.USERNAME => Tables.USER.USERNAME
+    case VideoField.OWNER_USERNAME => Tables.USER.USERNAME
   }
 
   override def join(query: SelectJoinStep[Record], apiField: ApiField) = {
     apiField match {
-      case UserField.USERNAME => query.join(Tables.USER).on(Tables.VIDEO.USER.equal(Tables.USER.ID))
+      case UserField.USERNAME => query.leftJoin(Tables.USER).on(Tables.VIDEO.USER.equal(Tables.USER.ID))
       case _ => query
     }
   }
+
+  override def afterJoin(query: SelectJoinStep[Record]): Select[Record] = query
 
 }
 
@@ -98,24 +102,38 @@ class UserApiRequest(apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USER
   override def field = {
     case UserField.USERNAME => Tables.USER.USERNAME
     case UserField.EMAIL => Tables.USER.EMAIL
-    case UserField.ABO_COUNT => count(Tables.USER_USER.USER_OBJECT)
+    case UserField.ABO_COUNT => count(abosAlias.USER_OBJECT)
   }
 
   override def join(query: SelectJoinStep[Record], apiField: ApiField) = {
     apiField match {
-      case UserField.ABO_COUNT => query.join(abosAlias).on(Tables.USER.ID.equal(Tables.USER_USER.USER_OBJECT).and(Tables.USER_USER.VERB.equal("")))
+      case UserField.ABO_COUNT => query.leftJoin(abosAlias).on(Tables.USER.ID.equal(abosAlias.USER_OBJECT).and(abosAlias.VERB.equal("")))
       case _ => query
     }
   }
+
+  override def afterJoin(query: SelectJoinStep[Record]): Select[Record] = {
+    var resultQuery: Select[Record] = query;
+    apiRequest.fields.foreach{ apiField =>
+      resultQuery = apiField match {
+        case UserField.ABO_COUNT => query.groupBy(Tables.USER.ID)
+        case _ => query
+      }
+    }
+
+    resultQuery
+  }
+
 }
 
 object Blub extends App {
-  val request = ApiRequest(Seq(VideoField.USERNAME))
+  val request = ApiRequest(Seq(UserField.USERNAME, UserField.ABO_COUNT))
 
-  val results = Server.dbService.getVideos(request)
+  val results = Server.dbService.getUsers(request)
 
   for (entity <- results.entities) {
-    println(entity.get(VideoField.USERNAME))
+    println(entity.get(UserField.USERNAME))
+    println(entity.get(UserField.ABO_COUNT))
   }
 
 }
