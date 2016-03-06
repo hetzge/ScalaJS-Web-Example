@@ -69,11 +69,11 @@ abstract class ApiRequestQuery(val table: Table[_],val apiRequest: ApiRequest) {
 
   def join(query: SelectJoinStep[Record], apiField: ApiField): SelectJoinStep[Record]
 
-  def createQuery() = joins(select(fields: _*).from(table))
+  def createQuery() = joins(Server.dbService.dslContext.select(fields: _*).from(table))
 
 }
 
-class VideoApiRequest(val apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USER, apiRequest) {
+class VideoApiRequest(apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USER, apiRequest) {
 
   override def field = {
     case VideoField.TITLE => Tables.VIDEO.TITLE
@@ -89,7 +89,7 @@ class VideoApiRequest(val apiRequest: ApiRequest) extends ApiRequestQuery(Tables
 
 }
 
-class UserApiRequest(val apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USER, apiRequest) {
+class UserApiRequest(apiRequest: ApiRequest) extends ApiRequestQuery(Tables.USER, apiRequest) {
 
   import org.jooq.impl.DSL._
 
@@ -101,7 +101,7 @@ class UserApiRequest(val apiRequest: ApiRequest) extends ApiRequestQuery(Tables.
     case UserField.ABO_COUNT => count(Tables.USER_USER.USER_OBJECT)
   }
 
-  override def join(query: SelectJoinStep[_], apiField: ApiField) = {
+  override def join(query: SelectJoinStep[Record], apiField: ApiField) = {
     apiField match {
       case UserField.ABO_COUNT => query.join(abosAlias).on(Tables.USER.ID.equal(Tables.USER_USER.USER_OBJECT).and(Tables.USER_USER.VERB.equal("")))
       case _ => query
